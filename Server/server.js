@@ -1,30 +1,31 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import connectMongoDB from './config/db.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import connectMongoDB from './config/db.js';
+
 // ========================================
 // ייבוא Routes
 // ========================================
 import authRoutes from './routes/authRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
-import favoriteRoutes from './routes/favoriteRoutes.js'; // 🆕 הוספה
+import favoriteRoutes from './routes/favoriteRoutes.js';
 
 // ========================================
 // הגדרות בסיסיות
 // ========================================
 dotenv.config(); // טעינת משתני סביבה מקובץ .env
-connectMongoDB(); // חיבור ל-MongoDB
 
-app.use(helmet());
-
-const app = express();
+const app = express(); // יצירת אפליקציית Express
 
 // ========================================
 // Middleware
 // ========================================
+
+// Helmet - אבטחה
+app.use(helmet());
 
 // CORS - מאפשר לצד הלקוח לדבר עם השרת
 app.use(cors({
@@ -41,15 +42,20 @@ const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 דקות
     max: 100, // מקסימום 100 בקשות לכל IP
     message: 'יותר מדי בקשות מ-IP זה, נסה שוב מאוחר יותר'
-  });
-  
-  app.use('/api/', limiter);
+});
+
+app.use('/api/', limiter);
 
 // לוג בקשות (אופציונלי - לדיבאג)
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
 });
+
+// ========================================
+// חיבור MongoDB
+// ========================================
+connectMongoDB(); // חיבור ל-MongoDB
 
 // ========================================
 // Routes (נתיבים)
@@ -63,7 +69,7 @@ app.get('/', (req, res) => {
             auth: '/api/auth',
             properties: '/api/properties',
             notifications: '/api/notifications',
-            favorites: '/api/favorites' // 🆕 הוספה
+            favorites: '/api/favorites'
         }
     });
 });
@@ -77,7 +83,7 @@ app.use('/api/properties', propertyRoutes);
 // נתיבי Notifications
 app.use('/api/notifications', notificationRoutes);
 
-// נתיבי Favorites - 🆕 הוספה
+// נתיבי Favorites
 app.use('/api/favorites', favoriteRoutes);
 
 // ========================================
