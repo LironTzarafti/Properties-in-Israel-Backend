@@ -88,26 +88,6 @@ const updateUserPatch = async (req, res) => {
     }
 }
 
-// delete - method
-const deleteUser = async (req, res) => {
-    try {
-
-        const userId = req.user._id;
-
-        const user = await User.findByIdAndDelete(userId);
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" })
-        }
-
-        res.status(200).json({
-            message: "Success, user deleted!"
-        })
-
-    } catch (error) {
-        res.status(500).json({ message: "Server Error: " + error.message })
-    }
-}
 
 const getUsers = async (req, res) => {
     try {
