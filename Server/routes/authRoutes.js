@@ -5,7 +5,7 @@ import {
     getMe,
     updateProfile,
     logoutUser,
-    deleteAccount // 🆕 הוסף את זה
+    deleteAccount 
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 

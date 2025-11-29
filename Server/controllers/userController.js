@@ -92,9 +92,9 @@ const updateUserPatch = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
 
-        const { id } = req.params
+        const userId = req.user._id;
 
-        const user = await User.findByIdAndDelete(id)
+        const user = await User.findByIdAndDelete(userId);
 
         if (!user) {
             return res.status(404).json({ message: "User not found" })
