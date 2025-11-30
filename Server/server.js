@@ -27,10 +27,30 @@ const app = express(); // יצירת אפליקציית Express
 // Helmet - אבטחה
 app.use(helmet());
 
-// CORS - מאפשר לצד הלקוח לדבר עם השרת
+// CORS - תומך גם בפיתוח וגם בייצור
+const allowedOrigins = [
+    'https://properties-in-israel-frontend.onrender.com',  // ייצור ברנדר
+    'http://localhost:5173',    
+    'http://localhost:5174',
+    'http://localhost:5175', 
+    'http://localhost:5176',                                   // פיתוח מקומי - Vite
+    'http://localhost:3000',                                // חלופה
+    'http://127.0.0.1:5173',                               // חלופה נוספת
+];
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173', // כתובת צד הלקוח
-    credentials: true, // מאפשר שליחת cookies
+    origin: function (origin, callback) {
+        // מאפשר בקשות ללא origin (Postman, Thunder Client, וכו')
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.log('❌ CORS blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
 }));
 
 // Body Parser - מאפשר קריאת JSON מבקשות
