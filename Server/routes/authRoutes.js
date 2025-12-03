@@ -5,9 +5,11 @@ import {
     getMe,
     updateProfile,
     logoutUser,
-    deleteAccount 
+    deleteAccount,
+    refreshAccessToken  // ✅ חדש
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { verifyRefreshToken } from '../middleware/refreshTokenMiddleware.js'; // ✅ חדש
 
 const router = express.Router();
 
@@ -21,8 +23,10 @@ router.post('/register', registerUser);
 // POST /api/auth/login - התחברות (Public)
 router.post('/login', loginUser);
 
+// POST /api/auth/refresh - רענון Access Token (Public אבל דורש Refresh Token בקוקי) ✅ חדש
+router.post('/refresh', verifyRefreshToken, refreshAccessToken);
+
 // GET /api/auth/me - קבלת פרטי המשתמש המחובר (Private)
-// protect - middleware שבודק אם יש token תקין
 router.get('/me', protect, getMe);
 
 // PUT /api/auth/profile - עדכון פרופיל משתמש (Private)
@@ -31,7 +35,7 @@ router.put('/profile', protect, updateProfile);
 // POST /api/auth/logout - התנתקות (Private)
 router.post('/logout', protect, logoutUser);
 
-// DELETE /api/auth/account - מחיקת חשבון המשתמש המחובר (Private) 🆕
+// DELETE /api/auth/account - מחיקת חשבון המשתמש המחובר (Private)
 router.delete('/account', protect, deleteAccount);
 
 export default router;

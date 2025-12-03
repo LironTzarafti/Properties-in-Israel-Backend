@@ -1,5 +1,17 @@
 import User from '../models/User.js';
-import generateToken from '../utils/generateToken.js';
+import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
+
+// ========================================
+// פונקציה עזר לשליחת Refresh Token בקוקי
+// ========================================
+const sendRefreshTokenCookie = (res, refreshToken) => {
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,      // לא נגיש ל-JavaScript (אבטחה)
+        secure: process.env.NODE_ENV === 'production', // HTTPS בלבד בפרודקשן
+        sameSite: 'strict',  // הגנה מפני CSRF
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 יום
+    });
+};
 
 // ========================================
 // @desc    הרשמת משתמש חדש
@@ -35,12 +47,19 @@ export const registerUser = async (req, res) => {
         
         // אם המשתמש נוצר בהצלחה
         if (user) {
+            // ✅ יצירת שני טוקנים
+            const accessToken = generateAccessToken(user._id);
+            const refreshToken = generateRefreshToken(user._id);
+            
+            // ✅ שליחת Refresh Token בקוקי
+            sendRefreshTokenCookie(res, refreshToken);
+            
             res.status(201).json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: generateToken(user._id)
+                token: accessToken // Access Token בלבד ללקוח
             });
         }
     } catch (error) {
@@ -72,12 +91,21 @@ export const loginUser = async (req, res) => {
         
         // בדיקת קיום משתמש ובדיקת סיסמה
         if (user && (await user.comparePassword(password))) {
+            // ✅ יצירת שני טוקנים
+            const accessToken = generateAccessToken(user._id);
+            const refreshToken = generateRefreshToken(user._id);
+            
+            // ✅ שליחת Refresh Token בקוקי
+            sendRefreshTokenCookie(res, refreshToken);
+            
+            console.log('✅ [LOGIN] התחברות הצליחה למשתמש:', user.email);
+            
             res.status(200).json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: generateToken(user._id)
+                token: accessToken // Access Token בלבד ללקוח
             });
         } else {
             res.status(401).json({ 
@@ -86,6 +114,29 @@ export const loginUser = async (req, res) => {
         }
     } catch (error) {
         console.error('שגיאה בהתחברות:', error);
+        res.status(500).json({ 
+            message: 'שגיאת שרת: ' + error.message 
+        });
+    }
+};
+
+// ========================================
+// @desc    רענון Access Token
+// @route   POST /api/auth/refresh
+// @access  Public (אבל דורש Refresh Token בקוקי)
+// ========================================
+export const refreshAccessToken = async (req, res) => {
+    try {
+        // הקוקי נבדק ב-middleware, req.user כבר קיים
+        const accessToken = generateAccessToken(req.user._id);
+        
+        console.log('🔄 [REFRESH] Access Token חדש נוצר למשתמש:', req.user.email);
+        
+        res.status(200).json({
+            token: accessToken
+        });
+    } catch (error) {
+        console.error('❌ [REFRESH] שגיאה ברענון טוקן:', error);
         res.status(500).json({ 
             message: 'שגיאת שרת: ' + error.message 
         });
@@ -165,23 +216,27 @@ export const updateProfile = async (req, res) => {
 // @access  Private
 // ========================================
 export const logoutUser = async (req, res) => {
+    // ✅ מחיקת הקוקי
+    res.cookie('refreshToken', '', {
+        httpOnly: true,
+        expires: new Date(0)
+    });
+    
+    console.log('👋 [LOGOUT] משתמש התנתק:', req.user?.email);
+    
     res.status(200).json({ 
         message: 'התנתקת בהצלחה' 
     });
 };
 
 // ========================================
-// @desc    מחיקת חשבון המשתמש המחובר - 🆕 חדש
+// @desc    מחיקת חשבון המשתמש המחובר
 // @route   DELETE /api/auth/account
 // @access  Private
 // ========================================
 export const deleteAccount = async (req, res) => {
     try {
-        const userId = req.user._id; // מגיע מה-middleware
-        
-        // 🔴 אופציונלי: מחיקת כל הנכסים של המשתמש
-        // אם יש לך מודל Property, הסר את ההערה מהשורה הבאה:
-        // await Property.deleteMany({ owner: userId });
+        const userId = req.user._id;
         
         // מחיקת המשתמש
         const user = await User.findByIdAndDelete(userId);
@@ -191,6 +246,14 @@ export const deleteAccount = async (req, res) => {
                 message: 'משתמש לא נמצא' 
             });
         }
+        
+        // ✅ מחיקת הקוקי
+        res.cookie('refreshToken', '', {
+            httpOnly: true,
+            expires: new Date(0)
+        });
+        
+        console.log('🗑️ [DELETE] חשבון נמחק:', user.email);
         
         res.status(200).json({ 
             message: 'החשבון נמחק בהצלחה' 

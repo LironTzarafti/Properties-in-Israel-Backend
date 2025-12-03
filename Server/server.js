@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import connectMongoDB from './config/db.js';
+import cookieParser from 'cookie-parser'; 
 
 // ========================================
 // ייבוא Routes
@@ -31,9 +32,7 @@ app.use(helmet());
 const allowedOrigins = [
     'https://properties-in-israel-frontend.onrender.com',  // ייצור ברנדר
     'http://localhost:5173',    
-    'http://localhost:5174',
-    'http://localhost:5175', 
-    'http://localhost:5176',                                   // פיתוח מקומי - Vite
+    'http://localhost:5174',                                  // פיתוח מקומי - Vite
     'http://localhost:3000',                                // חלופה
     'http://127.0.0.1:5173',                               // חלופה נוספת
 ];
@@ -56,6 +55,9 @@ app.use(cors({
 // Body Parser - מאפשר קריאת JSON מבקשות
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Cookie Parser - קריאה של cookies
+app.use(cookieParser()); // ← הוספה כאן
 
 // Rate Limiter - מונה בקשות מכל IP
 const limiter = rateLimit({
