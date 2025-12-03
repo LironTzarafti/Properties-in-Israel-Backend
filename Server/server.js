@@ -62,7 +62,9 @@ app.use(cookieParser()); // ← הוספה כאן
 // Rate Limiter - מונה בקשות מכל IP
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 דקות
-    max: 100, // מקסימום 100 בקשות לכל IP
+    max: 50, // הפחתנו ל-50 כדי לא להקפיץ 429 מהר מדי ב-Free Render
+    standardHeaders: true, // מחזיר X-RateLimit-* headers
+    legacyHeaders: false,    // מבטל X-RateLimit-Limit headers ישנים
     message: 'יותר מדי בקשות מ-IP זה, נסה שוב מאוחר יותר'
 });
 
