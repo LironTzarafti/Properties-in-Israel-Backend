@@ -59,16 +59,17 @@ app.use(express.urlencoded({ extended: true }));
 // Cookie Parser - קריאה של cookies
 app.use(cookieParser()); // ← הוספה כאן
 
-// Rate Limiter - מונה בקשות מכל IP
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 דקות
-    max: 50, // הפחתנו ל-50 כדי לא להקפיץ 429 מהר מדי ב-Free Render
-    standardHeaders: true, // מחזיר X-RateLimit-* headers
-    legacyHeaders: false,    // מבטל X-RateLimit-Limit headers ישנים
-    message: 'יותר מדי בקשות מ-IP זה, נסה שוב מאוחר יותר'
+// Rate Limit רק לפעולות רגישות
+const sensitiveLimiter = rateLimit({
+    windowMs: 60 * 1000, // דקה
+    max: 15,
+    message: 'יותר מדי בקשות. נסה שוב בעוד רגע.',
 });
 
-app.use('/api/', limiter);
+// רק על פעולות רגישות – לא על כל ה-API
+app.use('/api/auth', sensitiveLimiter);
+app.use('/api/properties', sensitiveLimiter); // יוצרים/מעדכנים
+
 
 // לוג בקשות (אופציונלי - לדיבאג)
 app.use((req, res, next) => {
