@@ -1,24 +1,15 @@
 import jwt from 'jsonwebtoken';
 
 // ========================================
-// פונקציה ליצירת Access Token (15 דקות)
+// פונקציה ליצירת Access Token (7 ימים)
 // ========================================
+// ✅ שינוי: 15m → 7d
+// ✅ הסרנו את generateRefreshToken - לא צריך יותר!
 export const generateAccessToken = (id) => {
     return jwt.sign(
         { id },
         process.env.JWT_SECRET,
-        { expiresIn: '15m' } // 15 דקות
-    );
-};
-
-// ========================================
-// פונקציה ליצירת Refresh Token (30 יום)
-// ========================================
-export const generateRefreshToken = (id) => {
-    return jwt.sign(
-        { id },
-        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, // ניתן להשתמש באותו סוד או בנפרד
-        { expiresIn: '30d' } // 30 יום
+        { expiresIn: '7d' } // ✅ 7 ימים במקום 15 דקות!
     );
 };
 
@@ -30,3 +21,4 @@ const generateToken = (id) => {
 };
 
 export default generateToken;
+

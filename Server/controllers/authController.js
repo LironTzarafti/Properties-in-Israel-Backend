@@ -1,17 +1,11 @@
 import User from '../models/User.js';
-import { generateAccessToken, generateRefreshToken } from '../utils/generateToken.js';
+import { generateAccessToken } from '../utils/generateToken.js';
 
 // ========================================
-// פונקציה עזר לשליחת Refresh Token בקוקי
+// ✅ הסרנו את sendRefreshTokenCookie - לא צריך יותר!
+// ✅ הסרנו את generateRefreshToken - לא צריך יותר!
+// ✅ הסרנו את refreshAccessToken - לא צריך יותר!
 // ========================================
-const sendRefreshTokenCookie = (res, refreshToken) => {
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,      // לא נגיש ל-JavaScript (אבטחה)
-        secure: process.env.NODE_ENV === 'production', // HTTPS בלבד בפרודקשן
-        sameSite: 'strict',  // הגנה מפני CSRF
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 יום
-    });
-};
 
 // ========================================
 // @desc    הרשמת משתמש חדש
@@ -47,19 +41,15 @@ export const registerUser = async (req, res) => {
         
         // אם המשתמש נוצר בהצלחה
         if (user) {
-            // ✅ יצירת שני טוקנים
+            // ✅ יצירת טוקן אחד בלבד - 7 ימים!
             const accessToken = generateAccessToken(user._id);
-            const refreshToken = generateRefreshToken(user._id);
-            
-            // ✅ שליחת Refresh Token בקוקי
-            sendRefreshTokenCookie(res, refreshToken);
             
             res.status(201).json({
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: accessToken // Access Token בלבד ללקוח
+                token: accessToken // ✅ טוקן אחד לכל 7 ימים!
             });
         }
     } catch (error) {
@@ -91,12 +81,8 @@ export const loginUser = async (req, res) => {
         
         // בדיקת קיום משתמש ובדיקת סיסמה
         if (user && (await user.comparePassword(password))) {
-            // ✅ יצירת שני טוקנים
+            // ✅ יצירת טוקן אחד בלבד - 7 ימים!
             const accessToken = generateAccessToken(user._id);
-            const refreshToken = generateRefreshToken(user._id);
-            
-            // ✅ שליחת Refresh Token בקוקי
-            sendRefreshTokenCookie(res, refreshToken);
             
             console.log('✅ [LOGIN] התחברות הצליחה למשתמש:', user.email);
             
@@ -105,7 +91,7 @@ export const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token: accessToken // Access Token בלבד ללקוח
+                token: accessToken // ✅ טוקן אחד לכל 7 ימים!
             });
         } else {
             res.status(401).json({ 
@@ -121,27 +107,8 @@ export const loginUser = async (req, res) => {
 };
 
 // ========================================
-// @desc    רענון Access Token
-// @route   POST /api/auth/refresh
-// @access  Public (אבל דורש Refresh Token בקוקי)
+// ✅ הסרנו את refreshAccessToken - לא צריך יותר!
 // ========================================
-export const refreshAccessToken = async (req, res) => {
-    try {
-        // הקוקי נבדק ב-middleware, req.user כבר קיים
-        const accessToken = generateAccessToken(req.user._id);
-        
-        console.log('🔄 [REFRESH] Access Token חדש נוצר למשתמש:', req.user.email);
-        
-        res.status(200).json({
-            token: accessToken
-        });
-    } catch (error) {
-        console.error('❌ [REFRESH] שגיאה ברענון טוקן:', error);
-        res.status(500).json({ 
-            message: 'שגיאת שרת: ' + error.message 
-        });
-    }
-};
 
 // ========================================
 // @desc    קבלת פרטי משתמש מחובר
@@ -195,7 +162,7 @@ export const updateProfile = async (req, res) => {
         if (req.body.email !== undefined) user.email = req.body.email;
         if (req.body.phone !== undefined) user.phone = req.body.phone;
         if (req.body.address !== undefined) user.address = req.body.address;
-        if (req.body.bio !== undefined) user.bio = req.body.bio;
+        if (req.body.bio !== undefined) user.bio = req.bio;
         
         await user.save();
         
@@ -216,12 +183,7 @@ export const updateProfile = async (req, res) => {
 // @access  Private
 // ========================================
 export const logoutUser = async (req, res) => {
-    // ✅ מחיקת הקוקי
-    res.cookie('refreshToken', '', {
-        httpOnly: true,
-        expires: new Date(0)
-    });
-    
+    // ✅ אין יותר קוקי למחוק - פשוט מחזירים הודעה
     console.log('👋 [LOGOUT] משתמש התנתק:', req.user?.email);
     
     res.status(200).json({ 
@@ -247,12 +209,6 @@ export const deleteAccount = async (req, res) => {
             });
         }
         
-        // ✅ מחיקת הקוקי
-        res.cookie('refreshToken', '', {
-            httpOnly: true,
-            expires: new Date(0)
-        });
-        
         console.log('🗑️ [DELETE] חשבון נמחק:', user.email);
         
         res.status(200).json({ 
@@ -265,3 +221,4 @@ export const deleteAccount = async (req, res) => {
         });
     }
 };
+

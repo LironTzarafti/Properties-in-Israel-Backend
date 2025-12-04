@@ -4,7 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import connectMongoDB from './config/db.js';
-import cookieParser from 'cookie-parser'; 
+
 
 // ========================================
 // ייבוא Routes
@@ -49,15 +49,12 @@ app.use(cors({
             callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true,
 }));
 
 // Body Parser - מאפשר קריאת JSON מבקשות
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Cookie Parser - קריאה של cookies
-app.use(cookieParser()); // ← הוספה כאן
 
 // Rate Limit רק לפעולות רגישות
 const sensitiveLimiter = rateLimit({
@@ -69,7 +66,6 @@ const sensitiveLimiter = rateLimit({
 // רק על פעולות רגישות – לא על כל ה-API
 app.use('/api/auth', sensitiveLimiter);
 app.use('/api/properties', sensitiveLimiter); // יוצרים/מעדכנים
-
 
 // לוג בקשות (אופציונלי - לדיבאג)
 app.use((req, res, next) => {
@@ -145,3 +141,4 @@ app.listen(PORT, () => {
     ╚════════════════════════════════════════╝
     `);
 });
+
